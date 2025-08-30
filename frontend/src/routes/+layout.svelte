@@ -102,15 +102,15 @@
 
 <div class="min-h-screen bg-gray-50">
 	<!-- Header -->
-	<header class="bg-white shadow-sm border-b">
-		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-			<div class="flex justify-between items-center h-16">
+	<header class="border-b bg-white shadow-sm">
+		<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+			<div class="flex h-16 items-center justify-between">
 				<!-- Logo/Title -->
-                <a href="/" class="flex items-center">
-				<div class="flex-shrink-0">
-					<h1 class="text-xl font-bold text-gray-900">ranking engine</h1>
-				</div>
-                </a>
+				<a href="/" class="flex items-center">
+					<div class="flex-shrink-0">
+						<h1 class="text-xl font-bold text-gray-900">ranking engine</h1>
+					</div>
+				</a>
 
 				<!-- User Section -->
 				<div class="relative">
@@ -119,7 +119,7 @@
 							<span class="text-gray-700">{user.username}</span>
 							<button
 								onclick={handleLogout}
-								class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+								class="text-sm text-gray-500 transition-colors hover:text-gray-700"
 							>
 								Logout
 							</button>
@@ -127,7 +127,7 @@
 					{:else}
 						<button
 							onclick={toggleLoginForm}
-							class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+							class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
 						>
 							Login
 						</button>
@@ -135,17 +135,24 @@
 
 					<!-- Login Form Dropdown -->
 					{#if showLoginForm && !user}
-						<div class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+						<div
+							class="ring-opacity-5 absolute right-0 z-50 mt-2 w-80 rounded-md bg-white shadow-lg ring-1 ring-black"
+						>
 							<div class="p-4">
-								<h3 class="text-lg font-medium text-gray-900 mb-4">Login</h3>
-								
+								<h3 class="mb-4 text-lg font-medium text-gray-900">Login</h3>
+
 								{#if loginError}
-									<div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+									<div class="mb-4 rounded-md border border-red-200 bg-red-50 p-3">
 										<p class="text-sm text-red-600">{loginError}</p>
 									</div>
 								{/if}
 
-								<form onsubmit={e => { e.preventDefault(); handleLogin(); }}>
+								<form
+									onsubmit={(e) => {
+										e.preventDefault();
+										handleLogin();
+									}}
+								>
 									<div class="space-y-4">
 										<div>
 											<label for="username" class="block text-sm font-medium text-gray-700">
@@ -156,7 +163,7 @@
 												type="text"
 												bind:value={loginForm.username}
 												required
-												class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+												class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
 												placeholder="Enter your username"
 											/>
 										</div>
@@ -169,7 +176,7 @@
 												type="password"
 												bind:value={loginForm.password}
 												required
-												class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+												class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
 												placeholder="Enter your password"
 											/>
 										</div>
@@ -178,13 +185,13 @@
 										<button
 											type="button"
 											onclick={toggleLoginForm}
-											class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+											class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
 										>
 											Cancel
 										</button>
 										<button
 											type="submit"
-											class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+											class="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
 										>
 											Login
 										</button>
@@ -199,7 +206,7 @@
 	</header>
 
 	<!-- Main Content -->
-	<main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+	<main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 		{@render children?.()}
 	</main>
 </div>
