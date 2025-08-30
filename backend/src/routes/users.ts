@@ -22,7 +22,7 @@ users.post('login', async (c) => {
         return new Promise((resolve) => {
             db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, row: User) => {
                 if (err) {
-                    resolve(c.json({ success: false, error: 'Database error', details: err.message }, 500))
+                    resolve(c.json({ success: false, error: 'Database error' }, 500))
                     return
                 }
 

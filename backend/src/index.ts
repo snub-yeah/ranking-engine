@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { jwt } from 'hono/jwt'
 import users from './routes/users.ts'
+import playlists from "./routes/playlists.js";
 
 const app = new Hono()
 
@@ -18,6 +19,8 @@ app.use('/api/*', async (c, next) => {
 })
 
 app.route('/api/users', users)
+
+app.route('/api/playlists', playlists)
 
 app.get('/', (c) => {
   return c.text('Why are you here?')
