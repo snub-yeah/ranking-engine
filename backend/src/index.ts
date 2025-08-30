@@ -1,8 +1,21 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { jwt } from 'hono/jwt'
 import users from './routes/users.ts'
 
 const app = new Hono()
+
+const jwtMiddleware = jwt({
+  secret: process.env.JWT_SECRET || 'fallback-secret',
+})
+
+app.use('/api/*', async (c, next) => {
+  const path = c.req.path
+  if (path.endsWith('/login') || path.endsWith('/add')) {
+    return next()
+  }
+  return jwtMiddleware(c, next)
+})
 
 app.route('/api/users', users)
 
