@@ -12,15 +12,15 @@ videos.get("/my-submissions/:id", async (c) => {
   const playlistId = c.req.param("id");
 
   return new Promise((resolve) => {
-    db.get(
+    db.all(
       "SELECT * FROM videos WHERE userId = ? AND playlistId = ?",
       [user.id, playlistId],
-      (err, playlist: Playlist) => {
-        if (!playlist) {
+      (err, videos) => {
+        if (!videos) {
           resolve(c.json({ error: "Playlist not found" }, 404));
         }
 
-        resolve(c.json({ playlist }));
+        resolve(c.json({ videos }));
       },
     );
   });
@@ -53,7 +53,8 @@ videos.post("/:id", async (c) => {
             const link = links[i];
             if (
               !link.startsWith("https://www.youtube.com/watch?v=") &&
-              !link.startsWith("https://youtu.be/")
+              !link.startsWith("https://youtu.be/") &&
+              !link.startsWith("https://www.youtube.com/embed/")
             ) {
               resolve(
                 c.json(
@@ -68,10 +69,11 @@ videos.post("/:id", async (c) => {
             let videoCode;
             if (link.startsWith("https://www.youtube.com/watch?v=")) {
               videoCode = link.split("v=")[1];
+              links[i] = `https://www.youtube.com/embed/${videoCode}`;
             } else if (link.startsWith("https://youtu.be/")) {
               videoCode = link.split("/")[3];
+              links[i] = `https://www.youtube.com/embed/${videoCode}`;
             }
-            links[i] = `https://www.youtube.com/embed/${videoCode}`;
           }
 
           //clear the user's current submissions. i dont wanna check if they exist and do updates, so we're doing this

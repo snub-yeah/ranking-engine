@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import sqlite3 from "sqlite3";
+import type { Playlist } from "../types.ts";
 
 const db = new sqlite3.Database("./src/app.db");
 
@@ -28,6 +29,41 @@ playlists.get("/:id", async (c) => {
         resolve(c.json({ playlist: rows }));
       }
     });
+  });
+});
+
+playlists.delete("/:id", async (c) => {
+  const user = c.get("jwtPayload");
+  const id = c.req.param("id");
+
+  return new Promise((resolve) => {
+    db.run(
+      "SELECT * FROM playlists WHERE id = ?",
+      [id],
+      (err, rows: Playlist[]) => {
+        if (err) {
+          resolve(c.json({ error: "Database error" }, 500));
+        } else if (!rows.length) {
+          resolve(c.json({ error: "Playlist not found" }, 404));
+        } else {
+          if (rows[0].userId !== user.id) {
+            resolve(c.json({ error: "That's not yours to delete" }, 403));
+          }
+          db.run("DELETE FROM playlists WHERE id = ?", [id], (err) => {
+            if (err) {
+              resolve(c.json({ error: "Database error" }, 500));
+            } else {
+              resolve(
+                c.json({
+                  success: true,
+                  message: "Playlist deleted successfully",
+                }),
+              );
+            }
+          });
+        }
+      },
+    );
   });
 });
 
