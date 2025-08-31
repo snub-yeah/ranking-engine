@@ -27,7 +27,7 @@ scores.get("/all/:playlistId", async (c) => {
             const ownerVoteCounts =
               playlist.doesOwnerVoteCount == 1 ? true : false;
             db.all(
-              "SELECT * FROM videos WHERE playlistId = ?",
+              "SELECT v.id, v.link, v.userId, u.username FROM videos v JOIN users u ON v.userId = u.id WHERE playlistId = ?",
               [playlistId],
               (err, videos: VideoMinusPlaylistId[]) => {
                 if (err) {
@@ -61,7 +61,7 @@ scores.get("/all/:playlistId", async (c) => {
                           if (!ownerVoteCounts) {
                             // Exclude owner's scores from average
                             scoresToInclude = scores.filter(
-                              (score) => score.userId !== playlist.userId,
+                              (score) => score.userId !== video.userId,
                             );
                           }
 
@@ -78,7 +78,7 @@ scores.get("/all/:playlistId", async (c) => {
                           video: {
                             id: video.id,
                             link: video.link,
-                            userId: video.userId,
+                            username: video.username,
                           },
                           scores: scores.map((score) => ({
                             id: score.id,

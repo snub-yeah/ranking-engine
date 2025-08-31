@@ -12,4 +12,5 @@ export type VideoMinusPlaylistId = {
   id: number;
   link: string;
   userId: number;
+  username: string;
 };
