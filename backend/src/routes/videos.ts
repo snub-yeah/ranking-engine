@@ -6,6 +6,24 @@ const db = new sqlite3.Database("./src/app.db");
 
 const videos = new Hono();
 
+videos.get("/:id", async (c) => {
+  const playlistId = c.req.param("id");
+
+  return new Promise((resolve) => {
+    db.all(
+      "SELECT * FROM videos WHERE playlistId = ?",
+      [playlistId],
+      (err, videos) => {
+        if (!videos) {
+          resolve(c.json({ error: "Video not found" }, 404));
+        }
+
+        resolve(c.json({ videos }));
+      },
+    );
+  });
+});
+
 videos.get("/my-submissions/:id", async (c) => {
   const user = c.get("jwtPayload");
 

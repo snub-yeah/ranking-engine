@@ -37,18 +37,18 @@ playlists.delete("/:id", async (c) => {
   const id = c.req.param("id");
 
   return new Promise((resolve) => {
-    db.run(
+    // Use db.get() for SELECT queries
+    db.get(
       "SELECT * FROM playlists WHERE id = ?",
       [id],
-      (err, rows: Playlist[]) => {
+      (err, row: Playlist) => {
         if (err) {
           resolve(c.json({ error: "Database error" }, 500));
-        } else if (!rows.length) {
+        } else if (!row) {
           resolve(c.json({ error: "Playlist not found" }, 404));
+        } else if (row.userId !== user.id) {
+          resolve(c.json({ error: "That's not yours to delete" }, 403));
         } else {
-          if (rows[0].userId !== user.id) {
-            resolve(c.json({ error: "That's not yours to delete" }, 403));
-          }
           db.run("DELETE FROM playlists WHERE id = ?", [id], (err) => {
             if (err) {
               resolve(c.json({ error: "Database error" }, 500));
