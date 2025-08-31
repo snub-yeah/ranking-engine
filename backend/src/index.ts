@@ -4,6 +4,7 @@ import { jwt } from "hono/jwt";
 import users from "./routes/users.ts";
 import playlists from "./routes/playlists.ts";
 import videos from "./routes/videos.ts";
+import scores from "./routes/scores.ts";
 
 const app = new Hono();
 
@@ -24,6 +25,8 @@ app.route("/api/users", users);
 app.route("/api/playlists", playlists);
 
 app.route("/api/videos", videos);
+
+app.route("/api/scores", scores);
 
 app.get("/", (c) => {
   return c.text("Why are you here?");
