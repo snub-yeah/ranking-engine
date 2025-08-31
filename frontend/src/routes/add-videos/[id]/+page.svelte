@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { getApiUrl, API_CONFIG } from '$lib/config';
 
 	type Playlist = {
 		id: number;
@@ -89,13 +90,16 @@
 			}
 
 			// Load playlist info
-			const playlistResponse = await fetch(`http://localhost:3000/api/playlists/${playlistId}`, {
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`
+			const playlistResponse = await fetch(
+				getApiUrl(`${API_CONFIG.ENDPOINTS.PLAYLISTS}/${playlistId}`),
+				{
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
+					}
 				}
-			});
+			);
 
 			const playlistData = await playlistResponse.json();
 
@@ -124,7 +128,7 @@
 	async function loadExistingSubmissions(token: string) {
 		try {
 			const submissionsResponse = await fetch(
-				`http://localhost:3000/api/videos/my-submissions/${playlistId}`,
+				getApiUrl(`${API_CONFIG.ENDPOINTS.MY_SUBMISSIONS}/${playlistId}`),
 				{
 					method: 'GET',
 					headers: {
@@ -216,7 +220,7 @@
 			// Convert URLs to embed format as the backend expects
 			const embedLinks = nonEmptyLinks.map(convertToEmbedUrl);
 
-			const response = await fetch(`http://localhost:3000/api/videos/${playlistId}`, {
+			const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.VIDEOS}/${playlistId}`), {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

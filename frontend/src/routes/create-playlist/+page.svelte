@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { getApiUrl, API_CONFIG } from '$lib/config';
 
 	// Form state
 	let formData = $state({
@@ -40,11 +41,11 @@
 				isSubmitting = false;
 				return;
 			}
-			const response = await fetch('http://localhost:3000/api/playlists', {
+			const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.PLAYLISTS), {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`
+					Authorization: `Bearer ${token}`
 				},
 				body: JSON.stringify({
 					name: formData.name.trim(),
@@ -82,23 +83,33 @@
 	<title>Create Playlist</title>
 </svelte:head>
 
-<div class="max-w-2xl mx-auto">
-	<div class="bg-white shadow rounded-lg">
-		<div class="px-6 py-4 border-b border-gray-200">
+<div class="mx-auto max-w-2xl">
+	<div class="rounded-lg bg-white shadow">
+		<div class="border-b border-gray-200 px-6 py-4">
 			<h1 class="text-xl font-semibold text-gray-900">Create New Playlist</h1>
 			<p class="mt-1 text-sm text-gray-600">
 				Create a new playlist to organize and rank your videos.
 			</p>
 		</div>
 
-		<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="px-6 py-4 space-y-6">
+		<form
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleSubmit();
+			}}
+			class="space-y-6 px-6 py-4"
+		>
 			<!-- Success Message -->
 			{#if success}
 				<div class="rounded-md bg-green-50 p-4">
 					<div class="flex">
 						<div class="flex-shrink-0">
 							<svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+								<path
+									fill-rule="evenodd"
+									d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+									clip-rule="evenodd"
+								/>
 							</svg>
 						</div>
 						<div class="ml-3">
@@ -114,7 +125,11 @@
 					<div class="flex">
 						<div class="flex-shrink-0">
 							<svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+								<path
+									fill-rule="evenodd"
+									d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+									clip-rule="evenodd"
+								/>
 							</svg>
 						</div>
 						<div class="ml-3">
@@ -126,7 +141,7 @@
 
 			<!-- Playlist Name -->
 			<div>
-				<label for="playlist-name" class="block text-sm font-medium text-gray-700 mb-2">
+				<label for="playlist-name" class="mb-2 block text-sm font-medium text-gray-700">
 					Playlist Name *
 				</label>
 				<input
@@ -138,14 +153,12 @@
 					placeholder="Enter playlist name"
 					disabled={isSubmitting}
 				/>
-				<p class="mt-1 text-xs text-gray-500">
-					Choose a descriptive name for your playlist.
-				</p>
+				<p class="mt-1 text-xs text-gray-500">Choose a descriptive name for your playlist.</p>
 			</div>
 
 			<!-- Video Limit -->
 			<div>
-				<label for="video-limit" class="block text-sm font-medium text-gray-700 mb-2">
+				<label for="video-limit" class="mb-2 block text-sm font-medium text-gray-700">
 					Video Limit *
 				</label>
 				<input
@@ -158,9 +171,7 @@
 					class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 					disabled={isSubmitting}
 				/>
-				<p class="mt-1 text-xs text-gray-500">
-					Maximum number of videos allowed in this playlist.
-				</p>
+				<p class="mt-1 text-xs text-gray-500">Maximum number of videos allowed in this playlist.</p>
 			</div>
 
 			<!-- Owner Vote Count -->
@@ -185,18 +196,18 @@
 			</div>
 
 			<!-- Submit Button -->
-			<div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+			<div class="flex justify-end space-x-3 border-t border-gray-200 pt-6">
 				<button
 					type="button"
 					onclick={() => goto('/')}
-					class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+					class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
 					disabled={isSubmitting}
 				>
 					Cancel
 				</button>
 				<button
 					type="submit"
-					class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					disabled={isSubmitting}
 				>
 					{isSubmitting ? 'Creating...' : 'Create'}

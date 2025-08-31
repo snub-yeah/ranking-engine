@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { getApiUrl, API_CONFIG } from '$lib/config';
 
 	type Video = {
 		id: number;
@@ -56,7 +57,7 @@
 	async function loadVideos() {
 		try {
 			const token = localStorage.getItem('auth_token');
-			const response = await fetch(`http://localhost:3000/api/videos/${playlistId}`, {
+			const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.VIDEOS}/${playlistId}`), {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -95,7 +96,7 @@
 		const token = localStorage.getItem('auth_token');
 		const scorePromises = videos.map(async (video) => {
 			try {
-				const response = await fetch(`http://localhost:3000/api/scores/${video.id}`, {
+				const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.SCORES}/${video.id}`), {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -161,7 +162,7 @@
 
 		try {
 			const token = localStorage.getItem('auth_token');
-			const response = await fetch(`http://localhost:3000/api/scores/${currentVideo.id}`, {
+			const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.SCORES}/${currentVideo.id}`), {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

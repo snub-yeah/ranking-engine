@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { getApiUrl, API_CONFIG } from '$lib/config';
 
 	type VideoData = {
 		video: {
@@ -49,7 +50,7 @@
 	async function loadScoresData() {
 		try {
 			const token = localStorage.getItem('auth_token');
-			const response = await fetch(`http://localhost:3000/api/scores/all/${playlistId}`, {
+			const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.SCORES_ALL}/${playlistId}`), {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -61,6 +62,7 @@
 
 			if (response.ok) {
 				videosData = data;
+				sortVideoDataByAverage(videosData);
 			} else {
 				error = data.error || 'Failed to load scores data';
 			}
@@ -69,6 +71,10 @@
 		} finally {
 			isLoading = false;
 		}
+	}
+
+	function sortVideoDataByAverage(videoData: VideoData[]) {
+		return videoData.sort((a, b) => a.average - b.average);
 	}
 
 	function extractVideoId(embedUrl: string): string {
@@ -80,7 +86,7 @@
 	}
 
 	function formatAverage(average: number): string {
-		return average > 0 ? average.toFixed(1) : 'No ratings';
+		return average > 0 ? average.toFixed(2) : 'No ratings';
 	}
 
 	function getScoreColor(score: number): string {

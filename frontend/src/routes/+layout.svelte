@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { getApiUrl, API_CONFIG } from '$lib/config';
 
 	let { children } = $props();
 
@@ -47,7 +48,7 @@
 
 	async function handleLogin() {
 		try {
-			const response = await fetch('http://localhost:3000/api/users/login', {
+			const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.LOGIN), {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'

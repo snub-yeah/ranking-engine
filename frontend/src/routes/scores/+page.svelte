@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { getApiUrl, API_CONFIG } from '$lib/config';
 
 	type Playlist = {
 		id: number;
@@ -23,7 +24,7 @@
 	async function loadPlaylists() {
 		try {
 			const token = localStorage.getItem('auth_token');
-			const response = await fetch('http://localhost:3000/api/playlists/all', {
+			const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.PLAYLISTS_ALL), {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -63,13 +64,16 @@
 		isDeleting = true;
 		try {
 			const token = localStorage.getItem('auth_token');
-			const response = await fetch(`http://localhost:3000/api/playlists/${deleteConfirmId}`, {
-				method: 'DELETE',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`
+			const response = await fetch(
+				getApiUrl(`${API_CONFIG.ENDPOINTS.PLAYLISTS}/${deleteConfirmId}`),
+				{
+					method: 'DELETE',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
+					}
 				}
-			});
+			);
 
 			const data = await response.json();
 
