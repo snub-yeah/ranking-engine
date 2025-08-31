@@ -7,3 +7,9 @@ export type Playlist = {
   doesOwnerVoteCount: number;
   userId: number;
 };
+
+export type VideoMinusPlaylistId = {
+  id: number;
+  link: string;
+  userId: number;
+};
