@@ -8,6 +8,13 @@ export type Playlist = {
   userId: number;
 };
 
+export type Video = {
+  id: number;
+  link: string;
+  userId: number;
+  username: string;
+};
+
 export type VideoMinusPlaylistId = {
   id: number;
   link: string;

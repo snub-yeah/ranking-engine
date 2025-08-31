@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import sqlite3 from "sqlite3";
-import type { Playlist } from "../types.ts";
+import type { Playlist, Video } from "../types.ts";
 
 const db = new sqlite3.Database("./src/app.db");
 
@@ -37,33 +37,83 @@ playlists.delete("/:id", async (c) => {
   const id = c.req.param("id");
 
   return new Promise((resolve) => {
-    // Use db.get() for SELECT queries
-    db.get(
-      "SELECT * FROM playlists WHERE id = ?",
-      [id],
-      (err, row: Playlist) => {
-        if (err) {
-          resolve(c.json({ error: "Database error" }, 500));
-        } else if (!row) {
-          resolve(c.json({ error: "Playlist not found" }, 404));
-        } else if (row.userId !== user.id) {
-          resolve(c.json({ error: "That's not yours to delete" }, 403));
-        } else {
-          db.run("DELETE FROM playlists WHERE id = ?", [id], (err) => {
-            if (err) {
-              resolve(c.json({ error: "Database error" }, 500));
-            } else {
-              resolve(
-                c.json({
-                  success: true,
-                  message: "Playlist deleted successfully",
-                }),
-              );
-            }
-          });
-        }
-      },
-    );
+    db.serialize(() => {
+      db.run("BEGIN TRANSACTION");
+
+      // check if playlist exists and user owns it
+      db.get(
+        "SELECT * FROM playlists WHERE id = ?",
+        [id],
+        (err, row: Playlist) => {
+          if (err) {
+            db.run("ROLLBACK");
+            resolve(c.json({ error: "Database error" }, 500));
+            return;
+          }
+
+          if (!row) {
+            db.run("ROLLBACK");
+            resolve(c.json({ error: "Playlist not found" }, 404));
+            return;
+          }
+
+          if (row.userId !== user.id) {
+            db.run("ROLLBACK");
+            resolve(c.json({ error: "That's not yours to delete" }, 403));
+            return;
+          }
+
+          // delete scores for all videos in this playlist
+          db.run(
+            "DELETE FROM scores WHERE videoId IN (SELECT id FROM videos WHERE playlistId = ?)",
+            [id],
+            (err) => {
+              if (err) {
+                db.run("ROLLBACK");
+                resolve(c.json({ error: "Failed to delete scores" }, 500));
+                return;
+              }
+
+              // delete videos in this playlist
+              db.run("DELETE FROM videos WHERE playlistId = ?", [id], (err) => {
+                if (err) {
+                  db.run("ROLLBACK");
+                  resolve(c.json({ error: "Failed to delete videos" }, 500));
+                  return;
+                }
+
+                // delete the playlist itself
+                db.run("DELETE FROM playlists WHERE id = ?", [id], (err) => {
+                  if (err) {
+                    db.run("ROLLBACK");
+                    resolve(
+                      c.json({ error: "Failed to delete playlist" }, 500),
+                    );
+                    return;
+                  }
+
+                  // commit the transaction
+                  db.run("COMMIT", (err) => {
+                    if (err) {
+                      resolve(
+                        c.json({ error: "Failed to commit transaction" }, 500),
+                      );
+                    } else {
+                      resolve(
+                        c.json({
+                          success: true,
+                          message: "Playlist deleted successfully",
+                        }),
+                      );
+                    }
+                  });
+                });
+              });
+            },
+          );
+        },
+      );
+    });
   });
 });
 
