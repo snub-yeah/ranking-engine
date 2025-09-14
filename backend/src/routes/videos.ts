@@ -72,13 +72,14 @@ videos.post("/:id", async (c) => {
             if (
               !link.startsWith("https://www.youtube.com/watch?v=") &&
               !link.startsWith("https://youtu.be/") &&
-              !link.startsWith("https://www.youtube.com/embed/")
+              !link.startsWith("https://www.youtube.com/embed/") &&
+              !link.startsWith("https://drive.google.com/file/d/")
             ) {
               resolve(
                 c.json(
                   {
                     error:
-                      'Invalid video link. Please go to the youtube video, click "Share" and copy the link',
+                      'Invalid video link. Please go to the youtube video, click "Share" and copy the link, or set your google drive video to public and copy the link',
                   },
                   400,
                 ),
@@ -91,6 +92,9 @@ videos.post("/:id", async (c) => {
             } else if (link.startsWith("https://youtu.be/")) {
               videoCode = link.split("/")[3];
               links[i] = `https://www.youtube.com/embed/${videoCode}`;
+            } else if (link.startsWith("https://drive.google.com/file/d/")) {
+              videoCode = link.split("/")[5];
+              links[i] = `https://drive.google.com/file/d/${videoCode}/preview`;
             }
           }
 

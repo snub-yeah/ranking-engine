@@ -39,6 +39,11 @@
 			if (videoId) {
 				videoId = videoId.split('?')[0];
 			}
+		} else if (url.startsWith('https://drive.google.com/file/d/')) {
+			videoId = url.split('/d/')[1];
+			if (videoId) {
+				videoId = videoId.split('/preview')[0];
+			}
 		}
 
 		if (videoId) {
@@ -50,7 +55,9 @@
 	const validateYouTubeUrl = (url: string) => {
 		if (!url.trim()) return true; // Empty is allowed
 		return (
-			url.startsWith('https://www.youtube.com/watch?v=') || url.startsWith('https://youtu.be/')
+			url.startsWith('https://www.youtube.com/watch?v=') ||
+			url.startsWith('https://youtu.be/') ||
+			url.startsWith('https://drive.google.com/file/d/')
 		);
 	};
 
