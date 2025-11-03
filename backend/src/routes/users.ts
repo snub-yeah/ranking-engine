@@ -131,4 +131,45 @@ users.get("/profile", async (c) => {
   });
 });
 
+// Search users endpoint - returns up to 10 users initially, or fuzzy search results
+users.get("/search", async (c) => {
+  try {
+    const query = c.req.query("q") || "";
+    const limit = parseInt(c.req.query("limit") || "10");
+
+    return new Promise<Response>((resolve) => {
+      if (query.trim()) {
+        // Fuzzy search: find usernames that contain the query string (case-insensitive)
+        db.all(
+          "SELECT id, username FROM users WHERE username LIKE ? ORDER BY username LIMIT ?",
+          [`%${query}%`, limit],
+          (err, rows: Array<{ id: number; username: string }>) => {
+            if (err) {
+              resolve(c.json({ error: "Database error" }, 500));
+            } else {
+              resolve(c.json({ users: rows }));
+            }
+          },
+        );
+      } else {
+        // Return first 10 users if no query
+        db.all(
+          "SELECT id, username FROM users ORDER BY id LIMIT ?",
+          [limit],
+          (err, rows: Array<{ id: number; username: string }>) => {
+            if (err) {
+              resolve(c.json({ error: "Database error" }, 500));
+            } else {
+              resolve(c.json({ users: rows }));
+            }
+          },
+        );
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
 export default users;

@@ -160,4 +160,185 @@ playlists.post("/", async (c) => {
   }
 });
 
+// Get contributors for a playlist
+playlists.get("/:id/contributors", async (c) => {
+  const user = c.get("jwtPayload");
+  const id = c.req.param("id");
+
+  return new Promise<Response>((resolve) => {
+    // Check if user is the playlist owner
+    db.get(
+      "SELECT * FROM playlists WHERE id = ?",
+      [id],
+      (err, playlist: Playlist) => {
+        if (err) {
+          resolve(c.json({ error: "Database error" }, 500));
+          return;
+        }
+        if (!playlist) {
+          resolve(c.json({ error: "Playlist not found" }, 404));
+          return;
+        }
+        if (playlist.userId !== user.id) {
+          resolve(c.json({ error: "That's not your playlist" }, 403));
+          return;
+        }
+
+        // Get all contributors
+        db.all(
+          `SELECT c.user_id, u.username 
+           FROM CanContributeToPlaylist c 
+           JOIN users u ON c.user_id = u.id 
+           WHERE c.playlist_id = ?`,
+          [id],
+          (err, contributors) => {
+            if (err) {
+              resolve(c.json({ error: "Database error" }, 500));
+              return;
+            }
+            resolve(c.json({ contributors }));
+          },
+        );
+      },
+    );
+  });
+});
+
+// Add a contributor to a playlist
+playlists.post("/:id/contributors", async (c) => {
+  const user = c.get("jwtPayload");
+  const id = c.req.param("id");
+
+  try {
+    const { userId } = await c.req.json<{ userId: number }>();
+
+    if (!userId) {
+      return c.json({ error: "User ID is required" }, 400);
+    }
+
+    return new Promise<Response>((resolve) => {
+      // Check if user is the playlist owner
+      db.get(
+        "SELECT * FROM playlists WHERE id = ?",
+        [id],
+        (err, playlist: Playlist) => {
+          if (err) {
+            resolve(c.json({ error: "Database error" }, 500));
+            return;
+          }
+          if (!playlist) {
+            resolve(c.json({ error: "Playlist not found" }, 404));
+            return;
+          }
+          if (playlist.userId !== user.id) {
+            resolve(c.json({ error: "That's not your playlist" }, 403));
+            return;
+          }
+
+          // Check if user exists
+          db.get("SELECT * FROM users WHERE id = ?", [userId], (err, targetUser) => {
+            if (err) {
+              resolve(c.json({ error: "Database error" }, 500));
+              return;
+            }
+            if (!targetUser) {
+              resolve(c.json({ error: "User not found" }, 404));
+              return;
+            }
+
+            // Check if already a contributor
+            db.get(
+              "SELECT * FROM CanContributeToPlaylist WHERE user_id = ? AND playlist_id = ?",
+              [userId, id],
+              (err, existing) => {
+                if (err) {
+                  resolve(c.json({ error: "Database error" }, 500));
+                  return;
+                }
+                if (existing) {
+                  resolve(c.json({ error: "User is already a contributor" }, 400));
+                  return;
+                }
+
+                // Add contributor
+                db.run(
+                  "INSERT INTO CanContributeToPlaylist (user_id, playlist_id) VALUES (?, ?)",
+                  [userId, id],
+                  function (err) {
+                    if (err) {
+                      resolve(c.json({ error: "Database error" }, 500));
+                    } else {
+                      resolve(
+                        c.json(
+                          {
+                            success: true,
+                            message: "Contributor added successfully",
+                          },
+                          201,
+                        ),
+                      );
+                    }
+                  },
+                );
+              },
+            );
+          });
+        },
+      );
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
+// Remove a contributor from a playlist
+playlists.delete("/:id/contributors/:userId", async (c) => {
+  const user = c.get("jwtPayload");
+  const id = c.req.param("id");
+  const userId = parseInt(c.req.param("userId"));
+
+  return new Promise<Response>((resolve) => {
+    // Check if user is the playlist owner
+    db.get(
+      "SELECT * FROM playlists WHERE id = ?",
+      [id],
+      (err, playlist: Playlist) => {
+        if (err) {
+          resolve(c.json({ error: "Database error" }, 500));
+          return;
+        }
+        if (!playlist) {
+          resolve(c.json({ error: "Playlist not found" }, 404));
+          return;
+        }
+        if (playlist.userId !== user.id) {
+          resolve(c.json({ error: "That's not your playlist" }, 403));
+          return;
+        }
+
+        // Remove contributor
+        db.run(
+          "DELETE FROM CanContributeToPlaylist WHERE user_id = ? AND playlist_id = ?",
+          [userId, id],
+          function (err) {
+            if (err) {
+              resolve(c.json({ error: "Database error" }, 500));
+            } else if (this.changes === 0) {
+              resolve(c.json({ error: "Contributor not found" }, 404));
+            } else {
+              resolve(
+                c.json({
+                  success: true,
+                  message: "Contributor removed successfully",
+                }),
+              );
+            }
+          },
+        );
+      },
+    );
+  });
+});
+
 export default playlists;

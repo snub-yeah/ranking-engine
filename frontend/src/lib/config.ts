@@ -18,9 +18,13 @@ export const API_CONFIG = {
 		// Auth
 		LOGIN: '/api/users/login',
 
+		// Users
+		USERS_SEARCH: '/api/users/search',
+
 		// Playlists
 		PLAYLISTS: '/api/playlists',
 		PLAYLISTS_ALL: '/api/playlists/all',
+		PLAYLISTS_CONTRIBUTORS: '/api/playlists',
 
 		// Videos
 		VIDEOS: '/api/videos',

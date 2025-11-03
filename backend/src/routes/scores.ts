@@ -4,6 +4,32 @@ import type { Playlist, VideoMinusPlaylistId } from "../types.ts";
 
 const db = new sqlite3.Database("./src/app.db");
 
+// Helper function to check if user can contribute to a playlist
+function canUserContribute(
+  userId: number,
+  playlist: Playlist,
+  callback: (canContribute: boolean) => void,
+) {
+  // Creator can always contribute
+  if (playlist.userId === userId) {
+    callback(true);
+    return;
+  }
+
+  // Check if user is in CanContributeToPlaylist table
+  db.get(
+    "SELECT * FROM CanContributeToPlaylist WHERE user_id = ? AND playlist_id = ?",
+    [userId, playlist.id],
+    (err, row) => {
+      if (err) {
+        callback(false);
+        return;
+      }
+      callback(!!row);
+    },
+  );
+}
+
 const scores = new Hono();
 
 scores.get("/all/:playlistId", async (c) => {
@@ -151,54 +177,103 @@ scores.post("/:videoId", async (c) => {
     }
 
     return new Promise<Response>((resolve) => {
-      // Check if user already has a rating for this video
+      // First get the video to find its playlist
       db.get(
-        "SELECT * FROM scores WHERE userId = ? AND videoId = ?",
-        [user.id, videoId],
-        (err, existingScore) => {
+        "SELECT playlistId FROM videos WHERE id = ?",
+        [videoId],
+        (err, video: { playlistId: number }) => {
           if (err) {
-            resolve(c.json({ error: "Database error" }, 500));
-          } else if (existingScore) {
-            db.run(
-              "UPDATE scores SET score = ?, comment = ? WHERE userId = ? AND videoId = ?",
-              [score, comment || null, user.id, videoId],
-              function (err) {
-                if (err) {
-                  resolve(c.json({ error: "Database error" }, 500));
-                } else {
-                  resolve(
-                    c.json(
-                      {
-                        success: true,
-                        message: "Score updated successfully",
-                      },
-                      200,
-                    ),
-                  );
-                }
-              },
-            );
-          } else {
-            db.run(
-              "INSERT INTO scores (score, userId, videoId, comment) VALUES (?, ?, ?, ?)",
-              [score, user.id, videoId, comment || null],
-              function (err) {
-                if (err) {
-                  resolve(c.json({ error: "Database error" }, 500));
-                } else {
-                  resolve(
-                    c.json(
-                      {
-                        success: true,
-                        message: "Score created successfully",
-                      },
-                      201,
-                    ),
-                  );
-                }
-              },
-            );
+            resolve(c.json({ error: "Database error 1" }, 500));
+            return;
           }
+          if (!video) {
+            resolve(c.json({ error: "Video not found" }, 404));
+            return;
+          }
+
+          // Get the playlist
+          db.get(
+            "SELECT * FROM playlists WHERE id = ?",
+            [video.playlistId],
+            (err, playlist: Playlist) => {
+              if (err) {
+                resolve(c.json({ error: "Database error 2" }, 500));
+                return;
+              }
+              if (!playlist) {
+                resolve(c.json({ error: "Playlist not found" }, 404));
+                return;
+              }
+
+              // Check if user can contribute to this playlist
+              canUserContribute(user.id, playlist, (canContribute) => {
+                if (!canContribute) {
+                  resolve(
+                    c.json(
+                      {
+                        error:
+                          "You don't have permission to rate videos in this playlist",
+                      },
+                      403,
+                    ),
+                  );
+                  return;
+                }
+
+                // Check if user already has a rating for this video
+                db.get(
+                  "SELECT * FROM scores WHERE userId = ? AND videoId = ?",
+                  [user.id, videoId],
+                  (err, existingScore) => {
+                    if (err) {
+                      resolve(c.json({ error: "Database error 3" }, 500));
+                      return;
+                    } else if (existingScore) {
+                      db.run(
+                        "UPDATE scores SET score = ?, comment = ? WHERE userId = ? AND videoId = ?",
+                        [score, comment || null, user.id, videoId],
+                        function (err) {
+                          if (err) {
+                            resolve(c.json({ error: "Database error 4" }, 500));
+                          } else {
+                            resolve(
+                              c.json(
+                                {
+                                  success: true,
+                                  message: "Score updated successfully",
+                                },
+                                200,
+                              ),
+                            );
+                          }
+                        },
+                      );
+                    } else {
+                      db.run(
+                        "INSERT INTO scores (score, userId, videoId, comment) VALUES (?, ?, ?, ?)",
+                        [score, user.id, videoId, comment || null],
+                        function (err) {
+                          if (err) {
+                            resolve(c.json({ error: "Database error 5" }, 500));
+                          } else {
+                            resolve(
+                              c.json(
+                                {
+                                  success: true,
+                                  message: "Score created successfully",
+                                },
+                                201,
+                              ),
+                            );
+                          }
+                        },
+                      );
+                    }
+                  },
+                );
+              });
+            },
+          );
         },
       );
     });

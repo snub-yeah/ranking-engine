@@ -34,6 +34,13 @@
 	let scoreError = $state('');
 	let userId: number | null = $state(null);
 	let hasUsedEleven = $state(false);
+	let isPlaylistOwner = $state(false);
+	let showContributorModal = $state(false);
+	let contributors: Array<{ user_id: number; username: string }> = $state([]);
+	let searchUsers: Array<{ id: number; username: string }> = $state([]);
+	let searchQuery = $state('');
+	let isContributorLoading = $state(false);
+	let contributorError = $state('');
 
 	onMount(async () => {
 		// Get user ID from token
@@ -52,7 +59,167 @@
 		}
 
 		await loadVideos();
+		await checkPlaylistOwnership();
 	});
+
+	async function checkPlaylistOwnership() {
+		try {
+			const token = localStorage.getItem('auth_token');
+			const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.PLAYLISTS}/${playlistId}`), {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				credentials: 'include'
+			});
+
+			const data = await response.json();
+			if (data.playlist && data.playlist.length > 0) {
+				isPlaylistOwner = data.playlist[0].userId === userId;
+				if (isPlaylistOwner) {
+					await loadContributors();
+				}
+			}
+		} catch {
+			// Silently fail - user just won't see the button
+		}
+	}
+
+	async function loadContributors() {
+		try {
+			const token = localStorage.getItem('auth_token');
+			const response = await fetch(
+				getApiUrl(`${API_CONFIG.ENDPOINTS.PLAYLISTS_CONTRIBUTORS}/${playlistId}/contributors`),
+				{
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
+					},
+					credentials: 'include'
+				}
+			);
+
+			const data = await response.json();
+			if (data.contributors) {
+				contributors = data.contributors;
+			}
+		} catch {
+			contributors = [];
+		}
+	}
+
+	async function openContributorModal() {
+		showContributorModal = true;
+		searchQuery = '';
+		await loadUsers();
+	}
+
+	async function loadUsers() {
+		try {
+			const token = localStorage.getItem('auth_token');
+			const url = new URL(getApiUrl(API_CONFIG.ENDPOINTS.USERS_SEARCH));
+			if (searchQuery.trim()) {
+				url.searchParams.set('q', searchQuery);
+			}
+			url.searchParams.set('limit', '10');
+
+			const response = await fetch(url.toString(), {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				credentials: 'include'
+			});
+
+			const data = await response.json();
+			if (data.users) {
+				searchUsers = data.users;
+			}
+		} catch {
+			searchUsers = [];
+		}
+	}
+
+	async function handleSearchInput(e: Event) {
+		const target = e.target as HTMLInputElement;
+		searchQuery = target.value;
+		// Debounce search
+		setTimeout(() => {
+			if (target.value === searchQuery) {
+				loadUsers();
+			}
+		}, 300);
+	}
+
+	async function toggleContributor(userId: number) {
+		const isContributor = contributors.some((c) => c.user_id === userId);
+		isContributorLoading = true;
+		contributorError = '';
+
+		try {
+			const token = localStorage.getItem('auth_token');
+			if (isContributor) {
+				// Remove contributor
+				const response = await fetch(
+					getApiUrl(
+						`${API_CONFIG.ENDPOINTS.PLAYLISTS_CONTRIBUTORS}/${playlistId}/contributors/${userId}`
+					),
+					{
+						method: 'DELETE',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`
+						},
+						credentials: 'include'
+					}
+				);
+
+				const data = await response.json();
+				if (data.success) {
+					contributors = contributors.filter((c) => c.user_id !== userId);
+				} else {
+					contributorError = data.error || 'Failed to remove contributor';
+				}
+			} else {
+				// Add contributor
+				const response = await fetch(
+					getApiUrl(`${API_CONFIG.ENDPOINTS.PLAYLISTS_CONTRIBUTORS}/${playlistId}/contributors`),
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`
+						},
+						credentials: 'include',
+						body: JSON.stringify({ userId })
+					}
+				);
+
+				const data = await response.json();
+				if (data.success) {
+					// Reload users to get updated list with username
+					await loadUsers();
+					await loadContributors();
+				} else {
+					contributorError = data.error || 'Failed to add contributor';
+				}
+			}
+		} catch {
+			contributorError = 'Connection error. Please try again.';
+		} finally {
+			isContributorLoading = false;
+		}
+	}
+
+	function closeContributorModal() {
+		showContributorModal = false;
+		searchQuery = '';
+		searchUsers = [];
+		contributorError = '';
+	}
 
 	async function loadVideos() {
 		try {
@@ -269,12 +436,22 @@
 				<h1 class="mb-2 text-3xl font-bold text-gray-900">Rate Videos</h1>
 				<p class="text-lg text-gray-600">Playlist {playlistId}</p>
 			</div>
-			<button
-				onclick={() => goto('/rate')}
-				class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-			>
-				← Back to Playlists
-			</button>
+			<div class="flex gap-2">
+				{#if isPlaylistOwner}
+					<button
+						onclick={openContributorModal}
+						class="rounded-md border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-100 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
+					>
+						Manage Contributors
+					</button>
+				{/if}
+				<button
+					onclick={() => goto('/rate')}
+					class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
+				>
+					← Back to Playlists
+				</button>
+			</div>
 		</div>
 	</div>
 
@@ -391,7 +568,8 @@
 							onblur={(e) => {
 								const videoId = currentVideo?.id;
 								const score = currentScore;
-								const comment = e.target.value;
+								const target = e.target as HTMLTextAreaElement;
+								const comment = target.value;
 								if (videoId && score > 0) {
 									submitComment(videoId, score, comment);
 								}
@@ -466,6 +644,135 @@
 							</button>
 						{/each}
 					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Contributor Management Modal -->
+	{#if showContributorModal}
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+			onclick={(e) => {
+				if (e.target === e.currentTarget) closeContributorModal();
+			}}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="modal-title"
+		>
+			<div
+				class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-xl"
+				onclick={(e) => e.stopPropagation()}
+			>
+				<!-- Modal Header -->
+				<div class="border-b border-gray-200 px-6 py-4">
+					<div class="flex items-center justify-between">
+						<h2 id="modal-title" class="text-xl font-semibold text-gray-900">
+							Manage Contributors
+						</h2>
+						<button
+							onclick={closeContributorModal}
+							class="text-gray-400 hover:text-gray-600 focus:outline-none"
+						>
+							<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M6 18L18 6M6 6l12 12"
+								></path>
+							</svg>
+						</button>
+					</div>
+				</div>
+
+				<!-- Modal Body -->
+				<div class="px-6 py-4">
+					<!-- Error Message -->
+					{#if contributorError}
+						<div class="mb-4 rounded-md bg-red-50 p-3">
+							<p class="text-sm text-red-600">{contributorError}</p>
+						</div>
+					{/if}
+
+					<!-- Current Contributors -->
+					<div class="mb-6">
+						<h3 class="mb-3 text-sm font-medium text-gray-700">Current Contributors</h3>
+						{#if contributors.length > 0}
+							<div class="space-y-2">
+								{#each contributors as contributor (contributor.user_id)}
+									<div
+										class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2"
+									>
+										<span class="text-sm text-gray-900">{contributor.username}</span>
+										<button
+											onclick={() => toggleContributor(contributor.user_id)}
+											disabled={isContributorLoading}
+											class="text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
+										>
+											Remove
+										</button>
+									</div>
+								{/each}
+							</div>
+						{:else}
+							<p class="text-sm text-gray-500">No contributors yet. Only you can add videos and rate.</p>
+						{/if}
+					</div>
+
+					<!-- Search for Users -->
+					<div>
+						<label for="user-search" class="mb-2 block text-sm font-medium text-gray-700">
+							Search Users to Add
+						</label>
+						<input
+							id="user-search"
+							type="text"
+							value={searchQuery}
+							oninput={handleSearchInput}
+							placeholder="Type to search users..."
+							class="mb-4 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+						/>
+
+						<!-- User List -->
+						<div class="max-h-64 space-y-2 overflow-y-auto">
+							{#each searchUsers as user (user.id)}
+								{@const isContributor = contributors.some((c) => c.user_id === user.id)}
+								{@const isCurrentUser = user.id === userId}
+								{#if !isCurrentUser}
+									<div
+										class="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-2 {isContributor
+											? 'bg-green-50'
+											: 'bg-white'}"
+									>
+										<span class="text-sm text-gray-900">{user.username}</span>
+										<button
+											onclick={() => toggleContributor(user.id)}
+											disabled={isContributorLoading}
+											class="rounded-md px-3 py-1 text-sm font-medium {isContributor
+												? 'bg-red-100 text-red-700 hover:bg-red-200'
+												: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'} disabled:opacity-50"
+										>
+											{isContributor ? 'Remove' : 'Add'}
+										</button>
+									</div>
+								{/if}
+							{/each}
+							{#if searchUsers.length === 0 && searchQuery.trim()}
+								<p class="py-4 text-center text-sm text-gray-500">No users found</p>
+							{/if}
+						</div>
+					</div>
+				</div>
+
+				<!-- Modal Footer -->
+				<div class="border-t border-gray-200 px-6 py-4">
+					<button
+						onclick={closeContributorModal}
+						class="w-full rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
+					>
+						Close
+					</button>
 				</div>
 			</div>
 		</div>
