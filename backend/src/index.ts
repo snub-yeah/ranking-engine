@@ -9,10 +9,12 @@ import scores from "./routes/scores.js";
 
 const app = new Hono();
 
-app.use("/api/*", cors({
-  origin: process.env.FRONT_END || "http://localhost:5173",
+app.use("*", cors({
+  origin: process.env.FRONT_END?.trim() || "http://localhost:5173",
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowHeaders: ['Content-Type', 'Authorization'],
+  exposeHeaders: ['Content-Length'],
+  maxAge: 600,
   credentials: true
 }));
 
