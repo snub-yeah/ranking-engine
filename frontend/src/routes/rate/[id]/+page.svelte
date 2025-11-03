@@ -62,7 +62,8 @@
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${token}`
-				}
+				},
+				credentials: 'include'
 			});
 
 			const data = await response.json();
@@ -101,7 +102,8 @@
 					headers: {
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${token}`
-					}
+					},
+					credentials: 'include'
 				});
 				const data = await response.json();
 				return { videoId: video.id, score: data };
@@ -168,6 +170,7 @@
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${token}`
 				},
+				credentials: 'include',
 				body: JSON.stringify({
 					score: newScore,
 					comment: currentComment.trim() || null
@@ -208,9 +211,36 @@
 		}
 	}
 
-	async function submitComment() {
-		if (!currentVideo || currentScore === 0) return;
-		await submitScore(currentScore);
+	async function submitComment(videoId?: number, score?: number, comment?: string) {
+		// Use provided parameters or fall back to current state
+		const targetVideoId = videoId || currentVideo?.id;
+		const targetScore = score !== undefined ? score : currentScore;
+		const targetComment = comment !== undefined ? comment : currentComment;
+
+		if (!targetVideoId || targetScore === 0) return;
+
+		// Temporarily update state to submit for the correct video
+		const originalVideo = currentVideo;
+		const originalScore = currentScore;
+		const originalComment = currentComment;
+
+		// Find the target video
+		const targetVideo = videos.find((v) => v.id === targetVideoId);
+		if (!targetVideo) return;
+
+		// Temporarily set state for submission
+		currentVideo = targetVideo;
+		currentScore = targetScore;
+		currentComment = targetComment;
+
+		await submitScore(targetScore);
+
+		// Restore original state if we're not looking at the target video anymore
+		if (originalVideo?.id !== targetVideoId) {
+			currentVideo = originalVideo;
+			currentScore = originalScore;
+			currentComment = originalComment;
+		}
 	}
 
 	function extractVideoTitle(embedUrl: string): string {
@@ -358,7 +388,14 @@
 						<textarea
 							id="comment"
 							bind:value={currentComment}
-							onblur={submitComment}
+							onblur={(e) => {
+								const videoId = currentVideo?.id;
+								const score = currentScore;
+								const comment = e.target.value;
+								if (videoId && score > 0) {
+									submitComment(videoId, score, comment);
+								}
+							}}
 							placeholder="Add a comment about this video..."
 							rows="3"
 							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"

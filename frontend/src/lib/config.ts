@@ -61,6 +61,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}): P
 
 	return fetch(getApiUrl(endpoint), {
 		...options,
-		headers
+		headers,
+		credentials: 'include'
 	});
 }
