@@ -12,7 +12,7 @@ scores.get("/all/:playlistId", async (c) => {
   try {
     const playlistId = c.req.param("playlistId");
 
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       db.get(
         "SELECT * FROM playlists WHERE id = ?",
         [playlistId],
@@ -113,7 +113,7 @@ scores.get("/:videoId", async (c) => {
   const user = c.get("jwtPayload");
 
   try {
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       db.get(
         "SELECT * FROM scores WHERE userId = ? AND videoId = ?",
         [user.id, c.req.param("videoId")],
@@ -150,7 +150,7 @@ scores.post("/:videoId", async (c) => {
       );
     }
 
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       // Check if user already has a rating for this video
       db.get(
         "SELECT * FROM scores WHERE userId = ? AND videoId = ?",

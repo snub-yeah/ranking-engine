@@ -22,7 +22,7 @@ users.post("login", async (c) => {
       );
     }
 
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       db.get(
         `SELECT * FROM users WHERE username = ?`,
         [username],
@@ -90,7 +90,7 @@ users.post("/add", async (c) => {
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      return new Promise((resolve) => {
+      return new Promise<Response>((resolve) => {
         db.run(
           "INSERT INTO users (username, password) VALUES (?, ?)",
           [username, hashedPassword],

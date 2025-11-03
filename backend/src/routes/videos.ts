@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import sqlite3 from "sqlite3";
-import type { Playlist } from "../types.ts";
+import type { Playlist } from "../types.js";
 
 const db = new sqlite3.Database("./src/app.db");
 
@@ -9,7 +9,7 @@ const videos = new Hono();
 videos.get("/:id", async (c) => {
   const playlistId = c.req.param("id");
 
-  return new Promise((resolve) => {
+  return new Promise<Response>((resolve) => {
     db.all(
       "SELECT * FROM videos WHERE playlistId = ?",
       [playlistId],
@@ -29,7 +29,7 @@ videos.get("/my-submissions/:id", async (c) => {
 
   const playlistId = c.req.param("id");
 
-  return new Promise((resolve) => {
+  return new Promise<Response>((resolve) => {
     db.all(
       "SELECT * FROM videos WHERE userId = ? AND playlistId = ?",
       [user.id, playlistId],
@@ -54,7 +54,7 @@ videos.post("/:id", async (c) => {
       links: string[];
     }>();
 
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       db.get(
         "SELECT * FROM playlists WHERE id = ?",
         [playlistId],

@@ -7,7 +7,7 @@ const db = new sqlite3.Database("./src/app.db");
 const playlists = new Hono();
 
 playlists.get("/all", async (c) => {
-  return new Promise((resolve) => {
+  return new Promise<Response>((resolve) => {
     db.all("SELECT * FROM playlists", (err, rows) => {
       if (err) {
         resolve(c.json({ error: "Database error" }, 500));
@@ -21,7 +21,7 @@ playlists.get("/all", async (c) => {
 playlists.get("/:id", async (c) => {
   const id = c.req.param("id");
 
-  return new Promise((resolve) => {
+  return new Promise<Response>((resolve) => {
     db.all("SELECT * FROM playlists WHERE id = ?", [id], (err, rows) => {
       if (err) {
         resolve(c.json({ error: "Database error" }, 500));
@@ -36,7 +36,7 @@ playlists.delete("/:id", async (c) => {
   const user = c.get("jwtPayload");
   const id = c.req.param("id");
 
-  return new Promise((resolve) => {
+  return new Promise<Response>((resolve) => {
     db.serialize(() => {
       db.run("BEGIN TRANSACTION");
 
@@ -136,7 +136,7 @@ playlists.post("/", async (c) => {
       return c.json({ error: "Fix your vars bruh" }, 400);
     }
 
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       db.run(
         "INSERT INTO playlists (name, videoLimit, doesOwnerVoteCount, userId) VALUES (?, ?, ?, ?)",
         [name, videoLimit, doesOwnerVoteCount, user.id],
