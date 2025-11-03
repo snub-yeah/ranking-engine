@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { jwt } from "hono/jwt";
 import { cors } from "hono/cors";
+import "dotenv/config";
 import users from "./routes/users.js";
 import playlists from "./routes/playlists.js";
 import videos from "./routes/videos.js";
