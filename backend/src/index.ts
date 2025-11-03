@@ -1,10 +1,10 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { jwt } from "hono/jwt";
-import users from "./routes/users.ts";
-import playlists from "./routes/playlists.ts";
-import videos from "./routes/videos.ts";
-import scores from "./routes/scores.ts";
+import users from "./routes/users.js";
+import playlists from "./routes/playlists.js";
+import videos from "./routes/videos.js";
+import scores from "./routes/scores.js";
 
 const app = new Hono();
 
