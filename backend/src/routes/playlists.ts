@@ -8,7 +8,7 @@ const playlists = new Hono();
 
 playlists.get("/all", async (c) => {
   return new Promise<Response>((resolve) => {
-    db.all("SELECT * FROM playlists", (err, rows) => {
+    db.all("SELECT * FROM playlists ORDER BY id DESC", (err, rows) => {
       if (err) {
         resolve(c.json({ error: "Database error" }, 500));
       } else {
