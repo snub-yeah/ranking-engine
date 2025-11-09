@@ -2,6 +2,7 @@
 	<div class="mb-12 text-center">
 		<h1 class="mb-4 text-4xl font-bold text-gray-900">ranking engine</h1>
 		<p class="text-lg text-gray-600">select where to go. don't forget to login at the top right</p>
+        <a href="/demo" class="text-blue-300">how to use the site</a>
 	</div>
 
 	<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
